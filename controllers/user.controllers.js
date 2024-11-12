@@ -1,10 +1,14 @@
 const User = require("../models/user.model");
-
-// Create new user
+const bcrypt = require("bcrypt");
 exports.createUser = async (req, res) => {
   const { name, email, password } = req.body;
   try {
-    const user = new User({ name, email, password });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({ name, email, password: hashedPassword });
     await user.save();
     res.status(201).json({ message: "User created successfully", user });
   } catch (error) {
@@ -12,7 +16,6 @@ exports.createUser = async (req, res) => {
   }
 };
 
-// Get all users
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -22,7 +25,6 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// Get user by ID
 exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -33,7 +35,6 @@ exports.getUserById = async (req, res) => {
   }
 };
 
-// Update user by ID
 exports.updateUser = async (req, res) => {
   const { name, email, password } = req.body;
   try {
@@ -49,7 +50,6 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-// Delete user by ID
 exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
